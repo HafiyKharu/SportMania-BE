@@ -12,7 +12,7 @@ public class TransactionController (ITransactionService _transactionService, ITr
 {
     [HttpPost("initiate-payment")]
     [AllowAnonymous]
-    public async Task<IActionResult> InitiatePayment([FromBody] RequestInitiatePayment req)
+    public async Task<IActionResult> InitiatePayment([FromBody] RequestInitiatePayment req, CancellationToken cancellationToken)
     {
         try
         {
@@ -32,7 +32,7 @@ public class TransactionController (ITransactionService _transactionService, ITr
                 PhoneNumber = req.PhoneNumber
             };
 
-            var (isSuccess, result) = await _transactionService.InitiatePaymentAsync(requestTransaction, callbackUrl);
+            var (isSuccess, result) = await _transactionService.InitiatePaymentAsync(requestTransaction, callbackUrl, cancellationToken);
 
             return isSuccess ? Ok(new { redirectUrl = result }) : BadRequest(new { error = result });
         }
@@ -44,11 +44,11 @@ public class TransactionController (ITransactionService _transactionService, ITr
 
     [HttpGet("payment-callback")]
     [AllowAnonymous]
-    public async Task<IActionResult> PaymentCallback(Guid transactionId, string status_id)
+    public async Task<IActionResult> PaymentCallback(Guid transactionId, string status_id, CancellationToken cancellationToken)
     {
         try
         {
-            var transaction = await _transactionService.ProcessPaymentCallbackAsync(transactionId, status_id);
+            var transaction = await _transactionService.ProcessPaymentCallbackAsync(transactionId, status_id, cancellationToken);
 
             if (transaction == null)
                 return NotFound("Transaction not found.");
@@ -68,11 +68,11 @@ public class TransactionController (ITransactionService _transactionService, ITr
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         try
         {
-            var transactions = await _transactionRepository.GetAllTransactionsAsync();
+            var transactions = await _transactionRepository.GetAllTransactionsAsync(cancellationToken);
             return Ok(transactions);
         }
         catch (Exception ex)
@@ -83,11 +83,11 @@ public class TransactionController (ITransactionService _transactionService, ITr
 
     [HttpGet("{transactionId:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetById(Guid transactionId)
+    public async Task<IActionResult> GetById(Guid transactionId, CancellationToken cancellationToken)
     {
         try
         {
-            var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
+            var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId, cancellationToken);
 
             if (transaction == null)
                 return NotFound("Transaction not found.");

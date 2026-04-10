@@ -8,9 +8,9 @@ namespace SportMania.Controllers;
 public class PaymentController (ITransactionRepository _transactionRepository) : ControllerBase
 {
     [HttpGet("complete/{transactionId:guid}")]
-    public async Task<IActionResult> PaymentComplete(Guid transactionId)
+    public async Task<IActionResult> PaymentComplete(Guid transactionId, CancellationToken cancellationToken)
     {
-        var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId);
+        var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId, cancellationToken);
         if (transaction == null || transaction.PaymentStatus != "Success")
         {
             return NotFound("Transaction not found or not successful.");

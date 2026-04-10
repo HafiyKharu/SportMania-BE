@@ -7,7 +7,7 @@ namespace SportMania.Services;
 
 public class ToyyibPayService(IConfiguration _configuration, IHttpClientFactory _httpClientFactory) : IToyyibPayService
 {
-    public async Task<(bool IsSuccess, string Result)> CreateBillAsync(RequestToyyibPay request)
+    public async Task<(bool IsSuccess, string Result)> CreateBillAsync(RequestToyyibPay request, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -19,8 +19,8 @@ public class ToyyibPayService(IConfiguration _configuration, IHttpClientFactory 
                 Content = new FormUrlEncodedContent(request.ToFormData())
             };
 
-            using var response = await client.SendAsync(httpRequest);
-            var responseString = await response.Content.ReadAsStringAsync();
+            using var response = await client.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
+            var responseString = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             using var doc = JsonDocument.Parse(responseString);
             var root = doc.RootElement;

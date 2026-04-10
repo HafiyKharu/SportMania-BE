@@ -13,7 +13,7 @@ public class TransactionService(
         IToyyibPayService _toyyibPayService,
         IConfiguration _configuration) : ITransactionService
 {
-    public async Task<(bool IsSuccess, string Result)> InitiatePaymentAsync(RequestTransaction req, string returnUrl)
+    public async Task<(bool IsSuccess, string Result)> InitiatePaymentAsync(RequestTransaction req, string returnUrl, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -21,25 +21,25 @@ public class TransactionService(
             if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.PhoneNumber))
                 throw new Exception("Email or Phone Number is empty.");
 
-            var customer = await _customerRepository.GetCustomerByEmailAsync(req.Email);
+            var customer = await _customerRepository.GetCustomerByEmailAsync(req.Email, cancellationToken).ConfigureAwait(false);
             if (customer == null)
             {
                 customer = await _customerRepository.CreateCustomerAsync(new Customer
                 {
                     Email = req.Email,
                     PhoneNumber = req.PhoneNumber
-                });
+                }, cancellationToken).ConfigureAwait(false);
             }
             else if (string.IsNullOrWhiteSpace(customer.PhoneNumber))
             {
                 customer.PhoneNumber = req.PhoneNumber;
-                await _customerRepository.UpdateCustomerAsync(customer);
+                await _customerRepository.UpdateCustomerAsync(customer, cancellationToken).ConfigureAwait(false);
             }
 
             var transaction = new Transaction
             {
                 Customer = customer,
-                Plan = await _planRepository.GetByIdAsync(req.PlanId) ?? throw new Exception("Plan not found."),
+                Plan = await _planRepository.GetByIdAsync(req.PlanId, cancellationToken).ConfigureAwait(false) ?? throw new Exception("Plan not found."),
                 PaymentStatus = "Pending",
             };
             transaction.Amount = transaction.Plan.Price.ToString();
@@ -50,10 +50,10 @@ public class TransactionService(
             }
 
             //generate Key
-            transaction.Key = await _keyService.GenerateKeyAsync(ulong.Parse(guildIdString), req.PlanId, duration);
+            transaction.Key = await _keyService.GenerateKeyAsync(ulong.Parse(guildIdString), req.PlanId, duration, cancellationToken).ConfigureAwait(false);
 
             //Save Transaction
-            var createdTransaction = await _transactionRepository.CreateTransactionAsync(transaction);
+            var createdTransaction = await _transactionRepository.CreateTransactionAsync(transaction, cancellationToken).ConfigureAwait(false);
 
             // Prepare ToyyibPay request
             var categoryCode = transaction.Plan.CategoryCode;
@@ -74,7 +74,7 @@ public class TransactionService(
             );
 
             // Call ToyyibPay API
-            return await _toyyibPayService.CreateBillAsync(toyyibPayRequest);
+            return await _toyyibPayService.CreateBillAsync(toyyibPayRequest, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -82,17 +82,17 @@ public class TransactionService(
         }
     }
 
-    public async Task<Transaction> ProcessPaymentCallbackAsync(Guid transactionId, string statusId)
+    public async Task<Transaction> ProcessPaymentCallbackAsync(Guid transactionId, string statusId, CancellationToken cancellationToken = default)
     {
         try
         {
-            var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId) ?? throw new KeyNotFoundException($"Transaction with ID {transactionId} not found.");
+            var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId, cancellationToken).ConfigureAwait(false) ?? throw new KeyNotFoundException($"Transaction with ID {transactionId} not found.");
             transaction.PaymentStatus = statusId switch
             {
                 "1" => "Success",
                 _ => "Failed",
             };
-            await _transactionRepository.UpdateTransactionAsync(transaction);
+            await _transactionRepository.UpdateTransactionAsync(transaction, cancellationToken).ConfigureAwait(false);
             return transaction;
         }
         catch (Exception ex)

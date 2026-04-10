@@ -9,7 +9,7 @@ public class KeyService(
         IKeyRepository _keyRepository,
         ILogger<KeyService> _logger) : IKeyService
 {
-    public async Task<Key> GenerateKeyAsync(ulong guildId, Guid planId, int durationDays)
+    public async Task<Key> GenerateKeyAsync(ulong guildId, Guid planId, int durationDays, CancellationToken cancellationToken = default)
     {
         string licenseKey;
         int maxRetries = 10;
@@ -23,7 +23,7 @@ public class KeyService(
                 _logger.LogError("Failed to generate a unique license key after {MaxRetries} attempts.", maxRetries);
                 throw new InvalidOperationException("Could not generate a unique license key.");
             }
-        } while (await _keyRepository.GetByLicenseKeyAsync(licenseKey) != null);
+        } while (await _keyRepository.GetByLicenseKeyAsync(licenseKey, cancellationToken).ConfigureAwait(false) != null);
 
         var newKey = new Key
         {
@@ -36,7 +36,7 @@ public class KeyService(
             CreatedAt = DateTime.UtcNow
         };
 
-        return await _keyRepository.CreateAsync(newKey);
+        return await _keyRepository.CreateAsync(newKey, cancellationToken).ConfigureAwait(false);
     }
 
     private static string GenerateLicenseKey()

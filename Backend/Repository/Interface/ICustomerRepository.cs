@@ -4,10 +4,10 @@ namespace SportMania.Repository.Interface;
 
 public interface ICustomerRepository
 {
-    Task<IEnumerable<Customer>> GetAllCustomersAsync();
-    Task<Customer?> GetCustomerByIdAsync(Guid id);
-    Task<Customer> CreateCustomerAsync(Customer customer);
-    Task UpdateCustomerAsync(Customer customer);
-    Task DeleteCustomerAsync(Guid id);
-    Task<Customer?> GetCustomerByEmailAsync(string email);
+    Task<IEnumerable<Customer>> GetAllCustomersAsync(CancellationToken cancellationToken = default);
+    Task<Customer?> GetCustomerByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Customer> CreateCustomerAsync(Customer customer, CancellationToken cancellationToken = default);
+    Task UpdateCustomerAsync(Customer customer, CancellationToken cancellationToken = default);
+    Task DeleteCustomerAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Customer?> GetCustomerByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

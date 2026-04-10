@@ -22,7 +22,7 @@ public class LicenseExpirationService(
         {
             try
             {
-                await CheckExpiredLicenses();
+                await CheckExpiredLicenses(stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -31,7 +31,7 @@ public class LicenseExpirationService(
 
             try
             {
-                await Task.Delay(checkInterval, stoppingToken);
+                await Task.Delay(checkInterval, stoppingToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -41,12 +41,12 @@ public class LicenseExpirationService(
         }
     }
 
-    private async Task CheckExpiredLicenses()
+    private async Task CheckExpiredLicenses(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
         var keyRepo = scope.ServiceProvider.GetRequiredService<IKeyRepository>();
 
-        await keyRepo.DeleteExpiredKeysAsync();
+        await keyRepo.DeleteExpiredKeysAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Expired licenses cleanup completed");
     }
 }

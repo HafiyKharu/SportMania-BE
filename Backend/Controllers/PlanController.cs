@@ -11,16 +11,16 @@ namespace SportMania.Controllers;
 public class PlanController (IPlanRepository _planRepository): ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Plan>>> GetAll()
+    public async Task<ActionResult<IEnumerable<Plan>>> GetAll(CancellationToken cancellationToken)
     {
-        var plans = await _planRepository.GetAllAsync();
+        var plans = await _planRepository.GetAllAsync(cancellationToken);
         return Ok(plans);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Plan>> GetById(Guid id)
+    public async Task<ActionResult<Plan>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var plan = await _planRepository.GetByIdAsync(id);
+        var plan = await _planRepository.GetByIdAsync(id, cancellationToken);
         if (plan == null)
         {
             return NotFound();
@@ -31,30 +31,30 @@ public class PlanController (IPlanRepository _planRepository): ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<Plan>> Create([FromBody] Plan plan)
+    public async Task<ActionResult<Plan>> Create([FromBody] Plan plan, CancellationToken cancellationToken)
     {
-        await _planRepository.AddAsync(plan);
+        await _planRepository.AddAsync(plan, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = plan.PlanId }, plan);
     }
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] Plan plan)
+    public async Task<IActionResult> Update(Guid id, [FromBody] Plan plan, CancellationToken cancellationToken)
     {
         if (id != plan.PlanId)
         {
             return BadRequest(new { error = "Mismatched plan id." });
         }
 
-        await _planRepository.UpdateAsync(plan);
+        await _planRepository.UpdateAsync(plan, cancellationToken);
         return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await _planRepository.DeleteAsync(id);
+        await _planRepository.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -67,7 +67,7 @@ public class PlanController (IPlanRepository _planRepository): ControllerBase
 
     [HttpPost("media")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UploadMedia(IFormFile file)
+    public async Task<IActionResult> UploadMedia(IFormFile file, CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
             return BadRequest(new { error = "No file provided." });
@@ -88,7 +88,7 @@ public class PlanController (IPlanRepository _planRepository): ControllerBase
 
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
-            await file.CopyToAsync(stream);
+            await file.CopyToAsync(stream, cancellationToken);
         }
 
         return Ok(new { path = $"/Media/{newFileName}" });

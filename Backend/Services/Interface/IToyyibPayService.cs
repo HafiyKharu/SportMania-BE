@@ -5,7 +5,7 @@ namespace SportMania.Services.Interface
 {
     public interface IToyyibPayService
     {
-        Task<(bool IsSuccess, string Result)> CreateBillAsync(RequestToyyibPay request);
+        Task<(bool IsSuccess, string Result)> CreateBillAsync(RequestToyyibPay request, CancellationToken cancellationToken = default);
         RequestToyyibPay BuildRequest(
             string categoryCode,
             string billName,

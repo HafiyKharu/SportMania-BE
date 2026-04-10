@@ -7,7 +7,7 @@ namespace SportMania.Repository;
 
 public class PlanDetailsRepository (ApplicationDbContext _context) : IPlanDetailsRepository
 {    
-    public async Task UpsertForPlanAsync(Guid planId, IEnumerable<PlanDetails> incomingDetails)
+    public async Task UpsertForPlanAsync(Guid planId, IEnumerable<PlanDetails> incomingDetails, CancellationToken cancellationToken = default)
     {
         var validIncoming = incomingDetails
             .Where(d => !string.IsNullOrWhiteSpace(d.Value))
@@ -15,7 +15,8 @@ public class PlanDetailsRepository (ApplicationDbContext _context) : IPlanDetail
 
         var existingDetails = await _context.PlanDetails
             .Where(d => d.PlanId == planId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         // 1. Remove details that are no longer present
         var detailsToRemove = existingDetails
@@ -44,9 +45,9 @@ public class PlanDetailsRepository (ApplicationDbContext _context) : IPlanDetail
                     PlanDetailsId = incoming.PlanDetailsId == Guid.Empty ? Guid.NewGuid() : incoming.PlanDetailsId,
                     Value = incoming.Value,
                     PlanId = planId
-                });
+                }, cancellationToken).ConfigureAwait(false);
             }
         }
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }
