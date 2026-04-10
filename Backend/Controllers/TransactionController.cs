@@ -8,7 +8,7 @@ namespace SportMania.Controllers;
 
 [ApiController]
 [Route("api/transactions")]
-public class TransactionController (ITransactionService _transactionService, ITransactionRepository _transactionRepository) : ControllerBase
+public class TransactionController (ITransactionService _transactionService, ITransactionRepository _transactionRepository, IConfiguration _configuration) : ControllerBase
 {
     [HttpPost("initiate-payment")]
     [AllowAnonymous]
@@ -54,9 +54,10 @@ public class TransactionController (ITransactionService _transactionService, ITr
                 return NotFound("Transaction not found.");
 
             // Redirect to Frontend based on payment status
+            var frontendBaseUrl = (_configuration["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
             var frontendUrl = transaction.PaymentStatus == "Success"
-                ? $"http://localhost:5103/transactions/success/{transaction.TransactionId}"
-                : $"http://localhost:5103/transactions/failed/{transaction.TransactionId}";
+                ? $"{frontendBaseUrl}/transactions/success/{transaction.TransactionId}"
+                : $"{frontendBaseUrl}/transactions/failed/{transaction.TransactionId}";
 
             return Redirect(frontendUrl);
         }
