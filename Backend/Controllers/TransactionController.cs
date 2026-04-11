@@ -83,6 +83,7 @@ public class TransactionController (ITransactionService _transactionService, ITr
     }
 
     [HttpGet("{transactionId:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid transactionId, CancellationToken cancellationToken)
     {
         try
