@@ -83,7 +83,6 @@ public class TransactionController (ITransactionService _transactionService, ITr
     }
 
     [HttpGet("{transactionId:guid}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetById(Guid transactionId, CancellationToken cancellationToken)
     {
         try
