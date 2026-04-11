@@ -41,6 +41,15 @@ Minimal example (do not commit real secrets):
     "ConnectionStrings": {
         "DefaultConnection": "Host=localhost;Database=sportmania;Username=postgres;Password=your_password"
     },
+    "Frontend": {
+        "BaseUrl": "http://localhost:3000"
+    },
+    "Backend": {
+        "PublicBaseUrl": "http://localhost:5235"
+    },
+    "Cors": {
+        "AllowedOrigins": ["http://localhost:3000"]
+    },
     "ToyyibPay": {
         "UserSecretKey": "YOUR_TOYYIBPAY_SECRET",
         "CategoryCodes": {
@@ -63,6 +72,30 @@ Minimal example (do not commit real secrets):
 ### Frontend API base URL
 
 Frontend reads ApiBaseUrl (defaults to http://localhost:5235).
+
+### Redirect configuration for payment callback
+
+Backend now supports environment-based redirect settings for production deployments:
+
+- `Frontend:BaseUrl`: where users are redirected after callback (success/failed pages)
+- `Backend:PublicBaseUrl`: public backend URL used when creating ToyyibPay callback URL
+- `Cors:AllowedOrigins`: allowed frontend origins for API calls
+
+Example production values:
+
+```json
+{
+    "Frontend": {
+        "BaseUrl": "https://app.sportmania.com"
+    },
+    "Backend": {
+        "PublicBaseUrl": "https://api.sportmania.com"
+    },
+    "Cors": {
+        "AllowedOrigins": ["https://app.sportmania.com"]
+    }
+}
+```
 
 ## Run (Development)
 

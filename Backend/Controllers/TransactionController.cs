@@ -20,7 +20,7 @@ public class TransactionController (ITransactionService _transactionService, ITr
                 return BadRequest(ModelState);
 
             // Backend callback URL for processing payment status
-            var callbackUrl = Url.Action("PaymentCallback", "Transaction", null, Request.Scheme);
+            var callbackUrl = BuildBackendCallbackUrl();
 
             if (string.IsNullOrEmpty(callbackUrl))
                 return StatusCode(500, "Could not generate payment callback URL.");
@@ -54,7 +54,7 @@ public class TransactionController (ITransactionService _transactionService, ITr
                 return NotFound("Transaction not found.");
 
             // Redirect to Frontend based on payment status
-            var frontendBaseUrl = (_configuration["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
+            var frontendBaseUrl = GetFrontendBaseUrl();
             var frontendUrl = transaction.PaymentStatus == "Success"
                 ? $"{frontendBaseUrl}/transactions/success/{transaction.TransactionId}"
                 : $"{frontendBaseUrl}/transactions/failed/{transaction.TransactionId}";
@@ -99,5 +99,16 @@ public class TransactionController (ITransactionService _transactionService, ITr
         {
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
+    }
+
+    private string BuildBackendCallbackUrl()
+    {
+        var backendBaseUrl = (_configuration["Backend:PublicBaseUrl"] ?? $"{Request.Scheme}://{Request.Host}").TrimEnd('/');
+        return $"{backendBaseUrl}/api/transactions/payment-callback";
+    }
+
+    private string GetFrontendBaseUrl()
+    {
+        return (_configuration["Frontend:BaseUrl"] ?? "http://localhost:3000").TrimEnd('/');
     }
 }
