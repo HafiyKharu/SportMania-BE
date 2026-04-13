@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportMania.Models.Requests;
+using SportMania.Models.Responses;
 using SportMania.Repository.Interface;
 using SportMania.Services.Interface;
 
@@ -8,7 +9,7 @@ namespace SportMania.Controllers;
 
 [ApiController]
 [Route("api/transactions")]
-public class TransactionController (ITransactionService _transactionService, ITransactionRepository _transactionRepository, IConfiguration _configuration) : ControllerBase
+public class TransactionController (ITransactionService _transactionService, ITransactionRepository _transactionRepository, IConfiguration _configuration, ILogger<TransactionController> _logger) : ControllerBase
 {
     [HttpPost("initiate-payment")]
     [AllowAnonymous]
@@ -84,20 +85,47 @@ public class TransactionController (ITransactionService _transactionService, ITr
 
     [HttpGet("{transactionId:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetById(Guid transactionId, CancellationToken cancellationToken)
+    /// <summary>
+    /// Retrieves a transaction by identifier and returns the license key only on first successful view.
+    /// </summary>
+    /// <remarks>
+    /// If payment status is <c>Success</c> and <c>IsKeyViewed</c> is <c>false</c>, the response includes
+    /// <see cref="TransactionViewResponse.LicenseKey"/> and the transaction is marked as viewed.
+    /// Subsequent calls return the same transaction metadata without exposing the key again.
+    /// </remarks>
+    /// <param name="transactionId">The unique transaction identifier from route.</param>
+    /// <param name="cancellationToken">Cancellation token for propagating request cancellation to service and repository layers.</param>
+    /// <returns>
+    /// A <see cref="TransactionViewResponse"/> with one-time key visibility rules applied, or 404 when not found.
+    /// Returns 500 for unexpected server failures.
+    /// </returns>
+    /// <exception cref="OperationCanceledException">
+    /// Thrown by downstream async operations when <paramref name="cancellationToken"/> is canceled before completion.
+    /// </exception>
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TransactionViewResponse))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<TransactionViewResponse>> GetById([FromRoute] Guid transactionId, CancellationToken cancellationToken)
     {
         try
         {
-            var transaction = await _transactionRepository.GetTransactionByIdAsync(transactionId, cancellationToken);
+            var transaction = await _transactionService.GetTransactionForViewAsync(transactionId, cancellationToken);
 
             if (transaction == null)
+            {
+                _logger.LogWarning("Transaction not found for id {TransactionId}", transactionId);
                 return NotFound("Transaction not found.");
+            }
 
+            _logger.LogInformation("Transaction {TransactionId} retrieved. IsKeyViewed={IsKeyViewed}", transactionId, transaction.IsKeyViewed);
             return Ok(transaction);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            // Unexpected errors are logged and mapped to 500.
+            _logger.LogError(ex, "Error retrieving transaction by id {TransactionId}", transactionId);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error.");
         }
     }
 

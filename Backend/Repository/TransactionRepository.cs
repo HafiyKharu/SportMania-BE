@@ -47,6 +47,16 @@ public class TransactionRepository (ApplicationDbContext _context) : ITransactio
             .ConfigureAwait(false);
     }
 
+    public async Task<Transaction?> GetTransactionByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Transactions
+            .Include(t => t.Customer)
+            .Include(t => t.Plan)
+            .Include(t => t.Key)
+            .FirstOrDefaultAsync(t => t.TransactionId == id, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task UpdateTransactionAsync(Transaction transaction, CancellationToken cancellationToken = default)
     {
         _context.Entry(transaction).State = EntityState.Modified;

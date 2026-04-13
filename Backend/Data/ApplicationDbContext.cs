@@ -77,6 +77,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasForeignKey(t => t.KeyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<Transaction>()
+            .Property(t => t.IsKeyViewed)
+            .HasDefaultValue(false);
+
         builder.Entity<Customer>(entity =>
         {
             entity.HasKey(e => e.CustomerId);

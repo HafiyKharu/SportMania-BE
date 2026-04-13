@@ -1,5 +1,6 @@
 using SportMania.Models;
 using SportMania.Models.Requests;
+using SportMania.Models.Responses;
 using SportMania.Repository.Interface;
 using SportMania.Services.Interface;
 
@@ -99,6 +100,41 @@ public class TransactionService(
         {
             throw new ApplicationException($"Error processing payment callback: {ex.Message}");
         }
+    }
+
+    public async Task<TransactionViewResponse?> GetTransactionForViewAsync(Guid transactionId, CancellationToken cancellationToken = default)
+    {
+        var transaction = await _transactionRepository
+            .GetTransactionByIdForUpdateAsync(transactionId, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (transaction == null)
+        {
+            return null;
+        }
+
+        string? licenseKey = null;
+
+        if (transaction.PaymentStatus == "Success" && transaction.Key != null && !transaction.IsKeyViewed)
+        {
+            licenseKey = transaction.Key.LicenseKey;
+            transaction.IsKeyViewed = true;
+            await _transactionRepository.UpdateTransactionAsync(transaction, cancellationToken).ConfigureAwait(false);
+        }
+
+        return new TransactionViewResponse
+        {
+            TransactionId = transaction.TransactionId,
+            CustomerId = transaction.CustomerId,
+            PlanId = transaction.PlanId,
+            KeyId = transaction.KeyId,
+            GuildId = transaction.GuildId,
+            Amount = transaction.Amount,
+            PaymentStatus = transaction.PaymentStatus,
+            BillCode = transaction.BillCode,
+            IsKeyViewed = transaction.IsKeyViewed,
+            LicenseKey = licenseKey
+        };
     }
 
     private static int ConvertPriceToCents(string price)

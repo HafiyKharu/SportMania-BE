@@ -12,6 +12,7 @@ public class Transaction : IHasAuditTimestamps
     public string Amount { get; set; } = string.Empty;
     public string PaymentStatus { get; set; } = "Pending";
     public string? BillCode { get; set; }
+    public bool IsKeyViewed { get; set; }
 
     public Customer Customer { get; set; } = null!;
     public Plan Plan { get; set; } = null!;
