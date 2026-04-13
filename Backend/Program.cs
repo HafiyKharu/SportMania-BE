@@ -8,6 +8,7 @@ using SportMania.Repository.Interface;
 using SportMania.Repository;
 using SportMania.Services.Interface;
 using SportMania.Services;
+using SportMania.Services.Extension;
 using Discord;
 using Discord.WebSocket;
 
@@ -94,6 +95,8 @@ builder.Services.AddScoped<IToyyibPayService, ToyyibPayService>();
 // Conditionally register Discord bot services
 if (builder.Configuration.GetValue<bool>("DiscordBot:Enabled"))
 {
+    builder.Services.AddScoped<DiscordCommandExecution>();
+
     // Register DiscordSocketClient as singleton
     builder.Services.AddSingleton<DiscordSocketClient>(provider =>
     {
